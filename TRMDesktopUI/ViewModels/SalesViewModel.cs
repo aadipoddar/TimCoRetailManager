@@ -72,6 +72,19 @@ namespace TRMDesktopUI.ViewModels
             }
         }
 
+        private CartItemDisplayModel _selectedCartItem;
+
+        public CartItemDisplayModel SelectedCartItem
+        {
+            get { return _selectedCartItem; }
+            set
+            {
+                _selectedCartItem = value;
+                NotifyOfPropertyChange(() => SelectedCartItem);
+                NotifyOfPropertyChange(() => CanRemoveFromCart);
+            }
+        }
+
         private BindingList<CartItemDisplayModel> _cart = new BindingList<CartItemDisplayModel>();
 
         public BindingList<CartItemDisplayModel> Cart
@@ -111,9 +124,7 @@ namespace TRMDesktopUI.ViewModels
             decimal subTotal = 0;
 
             foreach (var item in Cart)
-            {
                 subTotal += (item.Product.RetailPrice * item.QuantityInCart);
-            }
 
             return subTotal;
         }
@@ -130,7 +141,7 @@ namespace TRMDesktopUI.ViewModels
         private decimal CalculateTax()
         {
             decimal taxAmount = 0;
-            decimal taxRate = _configHelper.GetTaxRate()/100;
+            decimal taxRate = _configHelper.GetTaxRate() / 100;
 
             taxAmount = Cart
                 .Where(x => x.Product.IsTaxable)
@@ -159,9 +170,7 @@ namespace TRMDesktopUI.ViewModels
                 // Make sure Somthing is selected
                 // Make sure there is an item quantity
                 if (ItemQuantity > 0 && SelectedProduct?.QuantityInStock >= ItemQuantity)
-                {
                     output = true;
-                }
 
                 return output;
             }
@@ -172,9 +181,7 @@ namespace TRMDesktopUI.ViewModels
             CartItemDisplayModel existingItem = Cart.FirstOrDefault(x => x.Product == SelectedProduct);
 
             if (existingItem != null)
-            {
                 existingItem.QuantityInCart += ItemQuantity;
-            }
 
             else
             {
@@ -202,6 +209,8 @@ namespace TRMDesktopUI.ViewModels
                 bool output = false;
 
                 // Make Sure Somthing is Selected
+                if (SelectedCartItem != null && SelectedCartItem?.Product.QuantityInStock > 0)
+                    output = true;
 
                 return output;
             }
@@ -209,6 +218,13 @@ namespace TRMDesktopUI.ViewModels
 
         public void RemoveFromCart()
         {
+            SelectedCartItem.Product.QuantityInStock += 1;
+
+            if (SelectedCartItem.QuantityInCart > 1)
+                SelectedCartItem.QuantityInCart -= 1;
+            else
+                Cart.Remove(SelectedCartItem);
+
             NotifyOfPropertyChange(() => SubTotal);
             NotifyOfPropertyChange(() => Tax);
             NotifyOfPropertyChange(() => Total);
@@ -223,9 +239,7 @@ namespace TRMDesktopUI.ViewModels
 
                 // Make Sure There is Something in Cart
                 if (Cart.Count > 0)
-                {
                     output = true;
-                }
 
                 return output;
             }
